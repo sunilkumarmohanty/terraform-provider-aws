@@ -2,10 +2,10 @@ package aws
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"regexp"
+	"testing"
 )
 
 func TestAccAWSDataSourceIAMPolicyDocument_basic(t *testing.T) {
@@ -117,6 +117,27 @@ func TestAccAWSDataSourceIAMPolicyDocument_noStatementOverride(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckStateValue("data.aws_iam_policy_document.yak_politik", "json",
 						testAccAWSIAMPolicyDocumentNoStatementOverrideExpectedJSON,
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSDataSourceIAMPolicyDocument_duplicateSid(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccAWSIAMPolicyDocumentDuplicateSidConfig,
+				ExpectError: regexp.MustCompile(`Found duplicate sid (1). Either remove the sid or ensure the sid is unique across all statements.`),
+			},
+			{
+				Config: testAccAWSIAMPolicyDocumentDuplicateBlankSidConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckStateValue("data.aws_iam_policy_document.test", "json",
+						testAccAWSIAMPolicyDocumentDuplicateBlankSidExpectedJSON,
 					),
 				),
 			},
@@ -624,6 +645,58 @@ var testAccAWSIAMPolicyDocumentNoStatementOverrideExpectedJSON = `{
   "Statement": [
     {
       "Sid": "OverridePlaceholder",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "*"
+    }
+  ]
+}`
+
+var testAccAWSIAMPolicyDocumentDuplicateSidConfig = `
+data "aws_iam_policy_document" "test" {
+  statement {
+    sid    = "1"
+    effect = "Allow"
+    actions = ["ec2:DescribeAccountAttributes" ]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "1"
+    effect = "Allow"
+    actions = ["s3:GetObject"]
+    resources = ["*"]
+  }
+}
+`
+
+var testAccAWSIAMPolicyDocumentDuplicateBlankSidConfig = `{
+  data "aws_iam_policy_document" "test" {
+    statement {
+      sid    = ""
+      effect = "Allow"
+      actions = ["ec2:DescribeAccountAttributes" ]
+      resources = ["*"]
+    }
+    statement {
+      sid    = ""
+      effect = "Allow"
+      actions = ["s3:GetObject"]
+      resources = ["*"]
+    }
+  }
+  `
+
+var testAccAWSIAMPolicyDocumentDuplicateBlankSidExpectedJSON = `{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Action": "ec2:DescribeAccountAttributes",
+      "Resource": "*"
+    },
+    {
+      "Sid": "",
       "Effect": "Allow",
       "Action": "s3:GetObject",
       "Resource": "*"
