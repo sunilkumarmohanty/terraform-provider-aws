@@ -7,9 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/elasticbeanstalk"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/tfawsresource"
 )
 
 func TestAccAWSBeanstalkConfigurationTemplate_basic(t *testing.T) {
@@ -62,8 +63,9 @@ func TestAccAWSBeanstalkConfigurationTemplate_Setting(t *testing.T) {
 					testAccCheckBeanstalkConfigurationTemplateExists("aws_elastic_beanstalk_configuration_template.tf_template", &config),
 					resource.TestCheckResourceAttr(
 						"aws_elastic_beanstalk_configuration_template.tf_template", "setting.#", "1"),
-					resource.TestCheckResourceAttr(
-						"aws_elastic_beanstalk_configuration_template.tf_template", "setting.4112217815.value", "m1.small"),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs("aws_elastic_beanstalk_configuration_template.tf_template", "setting.*", map[string]string{
+						"value": "m1.small",
+					}),
 				),
 			},
 		},

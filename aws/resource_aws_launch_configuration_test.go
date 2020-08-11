@@ -10,9 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/tfawsresource"
 )
 
 func init() {
@@ -127,10 +128,10 @@ func TestAccAWSLaunchConfiguration_withBlockDevices(t *testing.T) {
 	})
 }
 
-func TestAccAWSLaunchConfiguration_updateRootBlockDevice(t *testing.T) {
+func TestAccAWSLaunchConfiguration_withInstanceStoreAMI(t *testing.T) {
 	var conf autoscaling.LaunchConfiguration
+	rName := acctest.RandomWithPrefix("tf-acc-test")
 	resourceName := "aws_launch_configuration.test"
-	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -138,7 +139,64 @@ func TestAccAWSLaunchConfiguration_updateRootBlockDevice(t *testing.T) {
 		CheckDestroy: testAccCheckAWSLaunchConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDevice(rInt),
+				Config: testAccAWSLaunchConfigurationConfigWithInstanceStoreAMI(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"associate_public_ip_address"},
+			},
+		},
+	})
+}
+
+func TestAccAWSLaunchConfiguration_RootBlockDevice_AmiDisappears(t *testing.T) {
+	var ami ec2.Image
+	var conf autoscaling.LaunchConfiguration
+	amiCopyResourceName := "aws_ami_copy.test"
+	resourceName := "aws_launch_configuration.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSLaunchConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDeviceCopiedAmi(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
+					testAccCheckAmiExists(amiCopyResourceName, &ami),
+					testAccCheckResourceDisappears(testAccProvider, resourceAwsAmi(), amiCopyResourceName),
+				),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDeviceVolumeSize(rName, 10),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSLaunchConfiguration_RootBlockDevice_VolumeSize(t *testing.T) {
+	var conf autoscaling.LaunchConfiguration
+	resourceName := "aws_launch_configuration.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSLaunchConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDeviceVolumeSize(rName, 11),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
 					resource.TestCheckResourceAttr(resourceName, "root_block_device.0.volume_size", "11"),
@@ -151,7 +209,7 @@ func TestAccAWSLaunchConfiguration_updateRootBlockDevice(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"associate_public_ip_address", "name_prefix"},
 			},
 			{
-				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDeviceUpdated(rInt),
+				Config: testAccAWSLaunchConfigurationConfigWithRootBlockDeviceVolumeSize(rName, 20),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
 					resource.TestCheckResourceAttr(resourceName, "root_block_device.0.volume_size", "20"),
@@ -308,7 +366,9 @@ func TestAccAWSLaunchConfiguration_updateEbsBlockDevices(t *testing.T) {
 				Config: testAccAWSLaunchConfigurationWithEncryption(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
-					resource.TestCheckResourceAttr(resourceName, "ebs_block_device.1393547169.volume_size", "9"),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "ebs_block_device.*", map[string]string{
+						"volume_size": "9",
+					}),
 				),
 			},
 			{
@@ -321,7 +381,9 @@ func TestAccAWSLaunchConfiguration_updateEbsBlockDevices(t *testing.T) {
 				Config: testAccAWSLaunchConfigurationWithEncryptionUpdated(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
-					resource.TestCheckResourceAttr(resourceName, "ebs_block_device.4131155854.volume_size", "10"),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "ebs_block_device.*", map[string]string{
+						"volume_size": "10",
+					}),
 				),
 			},
 		},
@@ -343,8 +405,10 @@ func TestAccAWSLaunchConfiguration_ebs_noDevice(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSLaunchConfigurationExists(resourceName, &conf),
 					resource.TestCheckResourceAttr(resourceName, "ebs_block_device.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ebs_block_device.3099842682.device_name", "/dev/sda2"),
-					resource.TestCheckResourceAttr(resourceName, "ebs_block_device.3099842682.no_device", "true"),
+					tfawsresource.TestCheckTypeSetElemNestedAttrs(resourceName, "ebs_block_device.*", map[string]string{
+						"device_name": "/dev/sda2",
+						"no_device":   "true",
+					}),
 				),
 			},
 			{
@@ -536,7 +600,7 @@ func testAccCheckAWSLaunchConfigurationExists(n string, res *autoscaling.LaunchC
 }
 
 func testAccAWSLaunchConfigurationConfig_ami() string {
-	return fmt.Sprintf(`
+	return `
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
@@ -546,24 +610,93 @@ data "aws_ami" "ubuntu" {
     values = ["ubuntu/images/ebs/ubuntu-precise-12.04-i386-server-2017*"]
   }
 }
-`)
+`
 }
 
-func testAccAWSLaunchConfigurationConfigWithRootBlockDevice(rInt int) string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
-resource "aws_launch_configuration" "test" {
-  name_prefix = "tf-acc-test-%d"
-  image_id = "${data.aws_ami.ubuntu.id}"
-  instance_type = "m1.small"
-  user_data = "testtest-user-data"
-  associate_public_ip_address = true
+func testAccAWSLaunchConfigurationConfig_HvmEbsAmi() string {
+	return `
+data "aws_ami" "amzn-ami-minimal-hvm-ebs" {
+  most_recent = true
+  owners      = ["amazon"]
 
-  root_block_device {
-    volume_type = "gp2"
-    volume_size = 11
+  filter {
+    name   = "name"
+    values = ["amzn-ami-minimal-hvm-*"]
+  }
+  
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
   }
 }
-`, rInt)
+`
+}
+
+func testAccAWSLaunchConfigurationConfig_instanceStoreAMI() string {
+	return `
+data "aws_ami" "amzn-ami-minimal-pv" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name = "name"
+    values = ["amzn-ami-minimal-pv-*"]
+  }
+
+  filter {
+    name = "root-device-type"
+    values = ["instance-store"]
+  }
+}
+`
+}
+
+func testAccAWSLaunchConfigurationConfigWithInstanceStoreAMI(rName string) string {
+	return testAccAWSLaunchConfigurationConfig_instanceStoreAMI() + fmt.Sprintf(`
+resource "aws_launch_configuration" "test" {
+  name     = %[1]q
+  image_id = data.aws_ami.amzn-ami-minimal-pv.id
+
+  # When the instance type is updated, the new type must support ephemeral storage.
+  instance_type = "m1.small"
+}
+`, rName)
+}
+
+func testAccAWSLaunchConfigurationConfigWithRootBlockDeviceCopiedAmi(rName string) string {
+	return testAccAWSLaunchConfigurationConfig_HvmEbsAmi() + fmt.Sprintf(`
+data "aws_region" "current" {}
+
+resource "aws_ami_copy" "test" {
+  name              = %[1]q
+  source_ami_id     = data.aws_ami.amzn-ami-minimal-hvm-ebs.id
+  source_ami_region = data.aws_region.current.name
+}
+
+resource "aws_launch_configuration" "test" {
+  name          = %[1]q
+  image_id      = aws_ami_copy.test.id
+  instance_type = "t3.micro"
+
+  root_block_device {
+    volume_size = 10
+  }
+}
+`, rName)
+}
+
+func testAccAWSLaunchConfigurationConfigWithRootBlockDeviceVolumeSize(rName string, volumeSize int) string {
+	return testAccAWSLaunchConfigurationConfig_HvmEbsAmi() + fmt.Sprintf(`
+resource "aws_launch_configuration" "test" {
+  name          = %[1]q
+  image_id      = data.aws_ami.amzn-ami-minimal-hvm-ebs.id
+  instance_type = "t3.micro"
+
+  root_block_device {
+    volume_size = %[2]d
+  }
+}
+`, rName, volumeSize)
 }
 
 func testAccAWSLaunchConfigurationConfigWithEncryptedRootBlockDevice(rInt int) string {
@@ -600,23 +733,6 @@ resource "aws_launch_configuration" "test" {
   }
 }
 `, rInt, rInt, rInt)
-}
-
-func testAccAWSLaunchConfigurationConfigWithRootBlockDeviceUpdated(rInt int) string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
-resource "aws_launch_configuration" "test" {
-  name_prefix = "tf-acc-test-%d"
-  image_id = "${data.aws_ami.ubuntu.id}"
-  instance_type = "m1.small"
-  user_data = "testtest-user-data"
-  associate_public_ip_address = true
-
-  root_block_device {
-    volume_type = "gp2"
-    volume_size = 20
-  }
-}
-`, rInt)
 }
 
 func testAccAWSLaunchConfigurationConfig() string {
@@ -662,18 +778,18 @@ resource "aws_launch_configuration" "test" {
 }
 
 func testAccAWSLaunchConfigurationNoNameConfig() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   image_id = "${data.aws_ami.ubuntu.id}"
   instance_type = "t2.micro"
   user_data = "testtest-user-data-change"
   associate_public_ip_address = false
 }
-`)
+`
 }
 
 func testAccAWSLaunchConfigurationPrefixNameConfig() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   name_prefix = "tf-acc-test-"
   image_id = "${data.aws_ami.ubuntu.id}"
@@ -681,11 +797,11 @@ resource "aws_launch_configuration" "test" {
   user_data = "testtest-user-data-change"
   associate_public_ip_address = false
 }
-`)
+`
 }
 
 func testAccAWSLaunchConfigurationWithEncryption() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   image_id = "${data.aws_ami.ubuntu.id}"
   instance_type = "t2.micro"
@@ -701,11 +817,11 @@ resource "aws_launch_configuration" "test" {
     encrypted = true
   }
 }
-`)
+`
 }
 
 func testAccAWSLaunchConfigurationWithEncryptionUpdated() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   image_id = "${data.aws_ami.ubuntu.id}"
   instance_type = "t2.micro"
@@ -721,7 +837,7 @@ resource "aws_launch_configuration" "test" {
     encrypted = true
   }
 }
-`)
+`
 }
 
 func testAccAWSLaunchConfigurationConfig_withVpcClassicLink(rInt int) string {
@@ -772,8 +888,8 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "profile" {
-  name  = "tf-acc-test-%[1]d"
-  roles = ["${aws_iam_role.role.name}"]
+  name = "tf-acc-test-%[1]d"
+  role = aws_iam_role.role.name
 }
 
 resource "aws_launch_configuration" "test" {
@@ -799,23 +915,23 @@ resource "aws_launch_configuration" "test" {
 }
 
 func testAccAWSLaunchConfigurationConfig_userData() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   image_id = "${data.aws_ami.ubuntu.id}"
   instance_type = "t2.micro"
   user_data = "foo:-with-character's"
   associate_public_ip_address = false
 }
-`)
+`
 }
 
 func testAccAWSLaunchConfigurationConfig_userDataBase64() string {
-	return testAccAWSLaunchConfigurationConfig_ami() + fmt.Sprintf(`
+	return testAccAWSLaunchConfigurationConfig_ami() + `
 resource "aws_launch_configuration" "test" {
   image_id = "${data.aws_ami.ubuntu.id}"
   instance_type = "t2.micro"
   user_data_base64 = "${base64encode("hello world")}"
   associate_public_ip_address = false
 }
-`)
+`
 }

@@ -9,12 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/worklink"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccAWSWorkLinkFleet_Basic(t *testing.T) {
+func TestAccAWSWorkLinkFleet_basic(t *testing.T) {
 	suffix := acctest.RandStringFromCharSet(20, acctest.CharSetAlpha)
 	resourceName := "aws_worklink_fleet.test"
 
@@ -386,7 +386,14 @@ resource "aws_worklink_fleet" "test" {
 
 func testAccAWSWorkLinkFleetConfigNetwork_Base(rName, cidrBlock string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 resource "aws_vpc" "test" {
   cidr_block = "%s"

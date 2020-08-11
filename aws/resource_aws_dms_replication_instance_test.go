@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	dms "github.com/aws/aws-sdk-go/service/databasemigrationservice"
 	gversion "github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func init() {
@@ -77,7 +77,7 @@ func testSweepDmsReplicationInstances(region string) error {
 	return nil
 }
 
-func TestAccAWSDmsReplicationInstance_Basic(t *testing.T) {
+func TestAccAWSDmsReplicationInstance_basic(t *testing.T) {
 	// NOTE: Using larger dms.c4.large here for AWS GovCloud (US) support
 	replicationInstanceClass := "dms.c4.large"
 	resourceName := "aws_dms_replication_instance.test"
@@ -684,7 +684,14 @@ resource "aws_dms_replication_instance" "test" {
 
 func testAccAWSDmsReplicationInstanceConfig_AvailabilityZone(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 data "aws_partition" "current" {}
 
@@ -778,7 +785,14 @@ resource "aws_dms_replication_instance" "test" {
 
 func testAccAWSDmsReplicationInstanceConfig_ReplicationSubnetGroupId(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 data "aws_partition" "current" {}
 
@@ -852,7 +866,14 @@ resource "aws_dms_replication_instance" "test" {
 
 func testAccAWSDmsReplicationInstanceConfig_VpcSecurityGroupIds(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 data "aws_partition" "current" {}
 

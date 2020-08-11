@@ -3412,8 +3412,8 @@ func (s *DescribeOriginEndpointOutput) SetWhitelist(v []*string) *DescribeOrigin
 }
 
 type ForbiddenException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -3430,17 +3430,17 @@ func (s ForbiddenException) GoString() string {
 
 func newErrorForbiddenException(v protocol.ResponseMetadata) error {
 	return &ForbiddenException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s ForbiddenException) Code() string {
+func (s *ForbiddenException) Code() string {
 	return "ForbiddenException"
 }
 
 // Message returns the exception's message.
-func (s ForbiddenException) Message() string {
+func (s *ForbiddenException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -3448,22 +3448,22 @@ func (s ForbiddenException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s ForbiddenException) OrigErr() error {
+func (s *ForbiddenException) OrigErr() error {
 	return nil
 }
 
-func (s ForbiddenException) Error() string {
+func (s *ForbiddenException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s ForbiddenException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *ForbiddenException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s ForbiddenException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *ForbiddenException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 // A HarvestJob resource configuration
@@ -3681,7 +3681,10 @@ type HlsManifest struct {
 	// will omit all SCTE-35 ad markers from the output."PASSTHROUGH" causes the
 	// manifest to contain a copy of the SCTE-35 admarkers (comments) taken directly
 	// from the input HTTP Live Streaming (HLS) manifest."SCTE35_ENHANCED" generates
-	// ad markers and blackout tags based on SCTE-35messages in the input source.
+	// ad markers and blackout tags based on SCTE-35messages in the input source."DATERANGE"
+	// inserts EXT-X-DATERANGE tags to signal ad and program transition events in
+	// HLS and CMAF manifests. For this option, you must set a programDateTimeIntervalSeconds
+	// value that is greater than 0.
 	AdMarkers *string `locationName:"adMarkers" type:"string" enum:"AdMarkers"`
 
 	// The ID of the manifest. The ID must be unique within the OriginEndpoint and
@@ -3785,7 +3788,10 @@ type HlsManifestCreateOrUpdateParameters struct {
 	// will omit all SCTE-35 ad markers from the output."PASSTHROUGH" causes the
 	// manifest to contain a copy of the SCTE-35 admarkers (comments) taken directly
 	// from the input HTTP Live Streaming (HLS) manifest."SCTE35_ENHANCED" generates
-	// ad markers and blackout tags based on SCTE-35messages in the input source.
+	// ad markers and blackout tags based on SCTE-35messages in the input source."DATERANGE"
+	// inserts EXT-X-DATERANGE tags to signal ad and program transition events in
+	// HLS and CMAF manifests. For this option, you must set a programDateTimeIntervalSeconds
+	// value that is greater than 0.
 	AdMarkers *string `locationName:"adMarkers" type:"string" enum:"AdMarkers"`
 
 	// A list of SCTE-35 message types that are treated as ad markers in the output.
@@ -3922,7 +3928,10 @@ type HlsPackage struct {
 	// will omit all SCTE-35 ad markers from the output."PASSTHROUGH" causes the
 	// manifest to contain a copy of the SCTE-35 admarkers (comments) taken directly
 	// from the input HTTP Live Streaming (HLS) manifest."SCTE35_ENHANCED" generates
-	// ad markers and blackout tags based on SCTE-35messages in the input source.
+	// ad markers and blackout tags based on SCTE-35messages in the input source."DATERANGE"
+	// inserts EXT-X-DATERANGE tags to signal ad and program transition events in
+	// HLS and CMAF manifests. For this option, you must set a programDateTimeIntervalSeconds
+	// value that is greater than 0.
 	AdMarkers *string `locationName:"adMarkers" type:"string" enum:"AdMarkers"`
 
 	// A list of SCTE-35 message types that are treated as ad markers in the output.
@@ -4120,8 +4129,8 @@ func (s *IngestEndpoint) SetUsername(v string) *IngestEndpoint {
 }
 
 type InternalServerErrorException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -4138,17 +4147,17 @@ func (s InternalServerErrorException) GoString() string {
 
 func newErrorInternalServerErrorException(v protocol.ResponseMetadata) error {
 	return &InternalServerErrorException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s InternalServerErrorException) Code() string {
+func (s *InternalServerErrorException) Code() string {
 	return "InternalServerErrorException"
 }
 
 // Message returns the exception's message.
-func (s InternalServerErrorException) Message() string {
+func (s *InternalServerErrorException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -4156,22 +4165,22 @@ func (s InternalServerErrorException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s InternalServerErrorException) OrigErr() error {
+func (s *InternalServerErrorException) OrigErr() error {
 	return nil
 }
 
-func (s InternalServerErrorException) Error() string {
+func (s *InternalServerErrorException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s InternalServerErrorException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *InternalServerErrorException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s InternalServerErrorException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *InternalServerErrorException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 type ListChannelsInput struct {
@@ -4590,8 +4599,8 @@ func (s *MssPackage) SetStreamSelection(v *StreamSelection) *MssPackage {
 }
 
 type NotFoundException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -4608,17 +4617,17 @@ func (s NotFoundException) GoString() string {
 
 func newErrorNotFoundException(v protocol.ResponseMetadata) error {
 	return &NotFoundException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s NotFoundException) Code() string {
+func (s *NotFoundException) Code() string {
 	return "NotFoundException"
 }
 
 // Message returns the exception's message.
-func (s NotFoundException) Message() string {
+func (s *NotFoundException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -4626,22 +4635,22 @@ func (s NotFoundException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s NotFoundException) OrigErr() error {
+func (s *NotFoundException) OrigErr() error {
 	return nil
 }
 
-func (s NotFoundException) Error() string {
+func (s *NotFoundException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s NotFoundException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *NotFoundException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s NotFoundException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *NotFoundException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 // An OriginEndpoint resource configuration.
@@ -5086,8 +5095,8 @@ func (s *S3Destination) SetRoleArn(v string) *S3Destination {
 }
 
 type ServiceUnavailableException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -5104,17 +5113,17 @@ func (s ServiceUnavailableException) GoString() string {
 
 func newErrorServiceUnavailableException(v protocol.ResponseMetadata) error {
 	return &ServiceUnavailableException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s ServiceUnavailableException) Code() string {
+func (s *ServiceUnavailableException) Code() string {
 	return "ServiceUnavailableException"
 }
 
 // Message returns the exception's message.
-func (s ServiceUnavailableException) Message() string {
+func (s *ServiceUnavailableException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -5122,22 +5131,22 @@ func (s ServiceUnavailableException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s ServiceUnavailableException) OrigErr() error {
+func (s *ServiceUnavailableException) OrigErr() error {
 	return nil
 }
 
-func (s ServiceUnavailableException) Error() string {
+func (s *ServiceUnavailableException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s ServiceUnavailableException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *ServiceUnavailableException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s ServiceUnavailableException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *ServiceUnavailableException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 // A configuration for accessing an external Secure Packager and Encoder Key
@@ -5342,8 +5351,8 @@ func (s TagResourceOutput) GoString() string {
 }
 
 type TooManyRequestsException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -5360,17 +5369,17 @@ func (s TooManyRequestsException) GoString() string {
 
 func newErrorTooManyRequestsException(v protocol.ResponseMetadata) error {
 	return &TooManyRequestsException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s TooManyRequestsException) Code() string {
+func (s *TooManyRequestsException) Code() string {
 	return "TooManyRequestsException"
 }
 
 // Message returns the exception's message.
-func (s TooManyRequestsException) Message() string {
+func (s *TooManyRequestsException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -5378,27 +5387,27 @@ func (s TooManyRequestsException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s TooManyRequestsException) OrigErr() error {
+func (s *TooManyRequestsException) OrigErr() error {
 	return nil
 }
 
-func (s TooManyRequestsException) Error() string {
+func (s *TooManyRequestsException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s TooManyRequestsException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *TooManyRequestsException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s TooManyRequestsException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *TooManyRequestsException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 type UnprocessableEntityException struct {
-	_            struct{} `type:"structure"`
-	respMetadata protocol.ResponseMetadata
+	_            struct{}                  `type:"structure"`
+	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
 
 	Message_ *string `locationName:"message" type:"string"`
 }
@@ -5415,17 +5424,17 @@ func (s UnprocessableEntityException) GoString() string {
 
 func newErrorUnprocessableEntityException(v protocol.ResponseMetadata) error {
 	return &UnprocessableEntityException{
-		respMetadata: v,
+		RespMetadata: v,
 	}
 }
 
 // Code returns the exception type name.
-func (s UnprocessableEntityException) Code() string {
+func (s *UnprocessableEntityException) Code() string {
 	return "UnprocessableEntityException"
 }
 
 // Message returns the exception's message.
-func (s UnprocessableEntityException) Message() string {
+func (s *UnprocessableEntityException) Message() string {
 	if s.Message_ != nil {
 		return *s.Message_
 	}
@@ -5433,22 +5442,22 @@ func (s UnprocessableEntityException) Message() string {
 }
 
 // OrigErr always returns nil, satisfies awserr.Error interface.
-func (s UnprocessableEntityException) OrigErr() error {
+func (s *UnprocessableEntityException) OrigErr() error {
 	return nil
 }
 
-func (s UnprocessableEntityException) Error() string {
+func (s *UnprocessableEntityException) Error() string {
 	return fmt.Sprintf("%s: %s", s.Code(), s.Message())
 }
 
 // Status code returns the HTTP status code for the request's response error.
-func (s UnprocessableEntityException) StatusCode() int {
-	return s.respMetadata.StatusCode
+func (s *UnprocessableEntityException) StatusCode() int {
+	return s.RespMetadata.StatusCode
 }
 
 // RequestID returns the service's response RequestID for request.
-func (s UnprocessableEntityException) RequestID() string {
-	return s.respMetadata.RequestID
+func (s *UnprocessableEntityException) RequestID() string {
+	return s.RespMetadata.RequestID
 }
 
 type UntagResourceInput struct {
@@ -5933,6 +5942,9 @@ const (
 
 	// AdMarkersPassthrough is a AdMarkers enum value
 	AdMarkersPassthrough = "PASSTHROUGH"
+
+	// AdMarkersDaterange is a AdMarkers enum value
+	AdMarkersDaterange = "DATERANGE"
 )
 
 // This setting allows the delivery restriction flags on SCTE-35 segmentation

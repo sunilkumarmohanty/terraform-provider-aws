@@ -8,12 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/codebuild"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccAWSCodeBuildSourceCredential_Basic(t *testing.T) {
+func TestAccAWSCodeBuildSourceCredential_basic(t *testing.T) {
 	var sourceCredentialsInfo codebuild.SourceCredentialsInfo
 	token := acctest.RandomWithPrefix("token")
 	resourceName := "aws_codebuild_source_credential.test"

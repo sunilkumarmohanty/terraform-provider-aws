@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSDbClusterSnapshotDataSource_DbClusterSnapshotIdentifier(t *testing.T) {
@@ -118,7 +118,14 @@ func testAccCheckAwsDbClusterSnapshotDataSourceExists(dataSourceName string) res
 
 func testAccCheckAwsDbClusterSnapshotDataSourceConfig_DbClusterSnapshotIdentifier(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 resource "aws_vpc" "test" {
   cidr_block = "192.168.0.0/16"
@@ -131,9 +138,9 @@ resource "aws_vpc" "test" {
 resource "aws_subnet" "test" {
   count = 2
 
-  availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
   cidr_block        = "192.168.${count.index}.0/24"
-  vpc_id            = "${aws_vpc.test.id}"
+  vpc_id            = aws_vpc.test.id
 
   tags = {
     Name = %q
@@ -142,34 +149,42 @@ resource "aws_subnet" "test" {
 
 resource "aws_db_subnet_group" "test" {
   name       = %q
-  subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
+  subnet_ids = [aws_subnet.test.*.id[0], aws_subnet.test.*.id[1]]
 }
 
 resource "aws_rds_cluster" "test" {
   cluster_identifier   = %q
-  db_subnet_group_name = "${aws_db_subnet_group.test.name}"
+  db_subnet_group_name = aws_db_subnet_group.test.name
   master_password      = "barbarbarbar"
   master_username      = "foo"
   skip_final_snapshot  = true
 }
 
 resource "aws_db_cluster_snapshot" "test" {
-  db_cluster_identifier          = "${aws_rds_cluster.test.id}"
+  db_cluster_identifier          = aws_rds_cluster.test.id
   db_cluster_snapshot_identifier = %q
+
   tags = {
     Name = %q
   }
 }
 
 data "aws_db_cluster_snapshot" "test" {
-  db_cluster_snapshot_identifier = "${aws_db_cluster_snapshot.test.id}"
+  db_cluster_snapshot_identifier = aws_db_cluster_snapshot.test.id
 }
 `, rName, rName, rName, rName, rName, rName)
 }
 
 func testAccCheckAwsDbClusterSnapshotDataSourceConfig_DbClusterIdentifier(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 resource "aws_vpc" "test" {
   cidr_block = "192.168.0.0/16"
@@ -182,9 +197,9 @@ resource "aws_vpc" "test" {
 resource "aws_subnet" "test" {
   count = 2
 
-  availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
   cidr_block        = "192.168.${count.index}.0/24"
-  vpc_id            = "${aws_vpc.test.id}"
+  vpc_id            = aws_vpc.test.id
 
   tags = {
     Name = %q
@@ -193,34 +208,42 @@ resource "aws_subnet" "test" {
 
 resource "aws_db_subnet_group" "test" {
   name       = %q
-  subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
+  subnet_ids = [aws_subnet.test.*.id[0], aws_subnet.test.*.id[1]]
 }
 
 resource "aws_rds_cluster" "test" {
   cluster_identifier   = %q
-  db_subnet_group_name = "${aws_db_subnet_group.test.name}"
+  db_subnet_group_name = aws_db_subnet_group.test.name
   master_password      = "barbarbarbar"
   master_username      = "foo"
   skip_final_snapshot  = true
 }
 
 resource "aws_db_cluster_snapshot" "test" {
-  db_cluster_identifier          = "${aws_rds_cluster.test.id}"
+  db_cluster_identifier          = aws_rds_cluster.test.id
   db_cluster_snapshot_identifier = %q
+
   tags = {
     Name = %q
   }
 }
 
 data "aws_db_cluster_snapshot" "test" {
-  db_cluster_identifier = "${aws_db_cluster_snapshot.test.db_cluster_identifier}"
+  db_cluster_identifier = aws_db_cluster_snapshot.test.db_cluster_identifier
 }
 `, rName, rName, rName, rName, rName, rName)
 }
 
 func testAccCheckAwsDbClusterSnapshotDataSourceConfig_MostRecent(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 resource "aws_vpc" "test" {
   cidr_block = "192.168.0.0/16"
@@ -233,9 +256,9 @@ resource "aws_vpc" "test" {
 resource "aws_subnet" "test" {
   count = 2
 
-  availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
   cidr_block        = "192.168.${count.index}.0/24"
-  vpc_id            = "${aws_vpc.test.id}"
+  vpc_id            = aws_vpc.test.id
 
   tags = {
     Name = %q
@@ -244,29 +267,29 @@ resource "aws_subnet" "test" {
 
 resource "aws_db_subnet_group" "test" {
   name       = %q
-  subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
+  subnet_ids = [aws_subnet.test.*.id[0], aws_subnet.test.*.id[1]]
 }
 
 resource "aws_rds_cluster" "test" {
   cluster_identifier   = %q
-  db_subnet_group_name = "${aws_db_subnet_group.test.name}"
+  db_subnet_group_name = aws_db_subnet_group.test.name
   master_password      = "barbarbarbar"
   master_username      = "foo"
   skip_final_snapshot  = true
 }
 
 resource "aws_db_cluster_snapshot" "incorrect" {
-  db_cluster_identifier          = "${aws_rds_cluster.test.id}"
+  db_cluster_identifier          = aws_rds_cluster.test.id
   db_cluster_snapshot_identifier = "%s-incorrect"
 }
 
 resource "aws_db_cluster_snapshot" "test" {
-  db_cluster_identifier          = "${aws_db_cluster_snapshot.incorrect.db_cluster_identifier}"
+  db_cluster_identifier          = aws_db_cluster_snapshot.incorrect.db_cluster_identifier
   db_cluster_snapshot_identifier = %q
 }
 
 data "aws_db_cluster_snapshot" "test" {
-  db_cluster_identifier = "${aws_db_cluster_snapshot.test.db_cluster_identifier}"
+  db_cluster_identifier = aws_db_cluster_snapshot.test.db_cluster_identifier
   most_recent           = true
 }
 `, rName, rName, rName, rName, rName, rName)

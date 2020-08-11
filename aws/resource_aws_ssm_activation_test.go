@@ -2,15 +2,14 @@ package aws
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSSSMActivation_basic(t *testing.T) {
@@ -32,6 +31,14 @@ func TestAccAWSSSMActivation_basic(t *testing.T) {
 					testAccCheckResourceAttrRfc3339(resourceName, "expiration_date"),
 					resource.TestCheckResourceAttr(resourceName, "tags.%", "1"),
 					resource.TestCheckResourceAttr(resourceName, "tags.Name", tag)),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"activation_code",
+				},
 			},
 		},
 	})
@@ -57,6 +64,14 @@ func TestAccAWSSSMActivation_update(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"activation_code",
+				},
+			},
+			{
 				Config: testAccAWSSSMActivationBasicConfig(name, "Foo"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSSSMActivationExists(resourceName, &ssmActivation2),
@@ -65,6 +80,14 @@ func TestAccAWSSSMActivation_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "tags.Name", "Foo"),
 					testAccCheckAWSSSMActivationRecreated(t, &ssmActivation1, &ssmActivation2),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"activation_code",
+				},
 			},
 		},
 	})
@@ -83,15 +106,19 @@ func TestAccAWSSSMActivation_expirationDate(t *testing.T) {
 		CheckDestroy: testAccCheckAWSSSMActivationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccAWSSSMActivationConfig_expirationDate(rName, "2018-03-01"),
-				ExpectError: regexp.MustCompile(`invalid RFC3339 timestamp`),
-			},
-			{
 				Config: testAccAWSSSMActivationConfig_expirationDate(rName, expirationDateS),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSSSMActivationExists(resourceName, &ssmActivation),
 					resource.TestCheckResourceAttr(resourceName, "expiration_date", expirationDateS),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"activation_code",
+				},
 			},
 		},
 	})

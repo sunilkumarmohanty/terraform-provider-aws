@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/directoryservice"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSDirectoryServiceLogSubscription_basic(t *testing.T) {
@@ -105,6 +105,11 @@ func testAccDirectoryServiceLogSubscriptionConfig(logGroupName string) string {
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
 }
 
 resource "aws_directory_service_directory" "bar" {
@@ -168,7 +173,7 @@ data "aws_iam_policy_document" "ad-log-policy" {
       type = "Service"
     }
   
-    resources = ["${aws_cloudwatch_log_group.logs.arn}"]
+    resources = ["${aws_cloudwatch_log_group.logs.arn}:*"]
   
     effect = "Allow"
   }

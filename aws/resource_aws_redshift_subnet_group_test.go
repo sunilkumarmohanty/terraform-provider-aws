@@ -7,9 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/redshift"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSRedshiftSubnetGroup_basic(t *testing.T) {
@@ -156,46 +156,6 @@ func TestAccAWSRedshiftSubnetGroup_tags(t *testing.T) {
 			},
 		},
 	})
-}
-
-func TestResourceAWSRedshiftSubnetGroupNameValidation(t *testing.T) {
-	cases := []struct {
-		Value    string
-		ErrCount int
-	}{
-		{
-			Value:    "default",
-			ErrCount: 1,
-		},
-		{
-			Value:    "testing123%%",
-			ErrCount: 1,
-		},
-		{
-			Value:    "TestingSG",
-			ErrCount: 1,
-		},
-		{
-			Value:    "testing_123",
-			ErrCount: 1,
-		},
-		{
-			Value:    "testing.123",
-			ErrCount: 1,
-		},
-		{
-			Value:    acctest.RandStringFromCharSet(256, acctest.CharSetAlpha),
-			ErrCount: 1,
-		},
-	}
-
-	for _, tc := range cases {
-		_, errors := validateRedshiftSubnetGroupName(tc.Value, "aws_redshift_subnet_group_name")
-
-		if len(errors) != tc.ErrCount {
-			t.Fatalf("Expected the Redshift Subnet Group Name to trigger a validation error")
-		}
-	}
 }
 
 func testAccCheckRedshiftSubnetGroupDestroy(s *terraform.State) error {

@@ -11,9 +11,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/efs"
 
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func init() {
@@ -22,6 +22,7 @@ func init() {
 		F:    testSweepEfsFileSystems,
 		Dependencies: []string{
 			"aws_efs_mount_target",
+			"aws_efs_access_point",
 		},
 	})
 }
@@ -98,7 +99,7 @@ func TestAccAWSEFSFileSystem_basic(t *testing.T) {
 				Config: testAccAWSEFSFileSystemConfig(rName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccMatchResourceAttrRegionalARN(resourceName, "arn", "elasticfilesystem", regexp.MustCompile(`file-system/fs-.+`)),
-					testAccMatchResourceAttrRegionalHostname(resourceName, "dns_name", "efs", regexp.MustCompile(`[^.]+`)),
+					testAccMatchResourceAttrRegionalHostname(resourceName, "dns_name", "efs", regexp.MustCompile(`fs-[^.]+`)),
 					resource.TestCheckResourceAttr(resourceName, "performance_mode", "generalPurpose"),
 					resource.TestCheckResourceAttr(resourceName, "throughput_mode", efs.ThroughputModeBursting),
 					testAccCheckEfsFileSystem(resourceName, &desc),

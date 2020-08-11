@@ -8,9 +8,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	events "github.com/aws/aws-sdk-go/service/cloudwatchevents"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func init() {
@@ -52,7 +52,8 @@ func testSweepCloudWatchEventRules(region string) error {
 
 			log.Printf("[INFO] Deleting CloudWatch Event Rule %s", name)
 			_, err := conn.DeleteRule(&events.DeleteRuleInput{
-				Name: aws.String(name),
+				Name:  aws.String(name),
+				Force: aws.Bool(true),
 			})
 			if err != nil {
 				return fmt.Errorf("Error deleting CloudWatch Event Rule %s: %s", name, err)

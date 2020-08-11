@@ -12,9 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/tfawsresource"
 )
 
 func init() {
@@ -81,7 +82,7 @@ func TestAccAWSEksCluster_basic(t *testing.T) {
 				Config: testAccAWSEksClusterConfig_Required(rName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEksClusterExists(resourceName, &cluster),
-					resource.TestMatchResourceAttr(resourceName, "arn", regexp.MustCompile(fmt.Sprintf("^arn:[^:]+:eks:[^:]+:[^:]+:cluster/%s$", rName))),
+					testAccMatchResourceAttrRegionalARN(resourceName, "arn", "eks", regexp.MustCompile(fmt.Sprintf("cluster/%s$", rName))),
 					resource.TestCheckResourceAttr(resourceName, "certificate_authority.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "certificate_authority.0.data"),
 					resource.TestMatchResourceAttr(resourceName, "endpoint", regexp.MustCompile(`^https://`)),
@@ -90,7 +91,7 @@ func TestAccAWSEksCluster_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "identity.0.oidc.0.issuer", regexp.MustCompile(`^https://`)),
 					resource.TestCheckResourceAttr(resourceName, "name", rName),
 					resource.TestMatchResourceAttr(resourceName, "platform_version", regexp.MustCompile(`^eks\.\d+$`)),
-					resource.TestMatchResourceAttr(resourceName, "role_arn", regexp.MustCompile(fmt.Sprintf("%s$", rName))),
+					resource.TestCheckResourceAttrPair(resourceName, "role_arn", "aws_iam_role.test", "arn"),
 					resource.TestCheckResourceAttr(resourceName, "status", eks.ClusterStatusActive),
 					resource.TestCheckResourceAttr(resourceName, "tags.%", "0"),
 					resource.TestMatchResourceAttr(resourceName, "version", regexp.MustCompile(`^\d+\.\d+$`)),
@@ -100,6 +101,36 @@ func TestAccAWSEksCluster_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_config.0.security_group_ids.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "vpc_config.0.subnet_ids.#", "2"),
 					resource.TestMatchResourceAttr(resourceName, "vpc_config.0.vpc_id", regexp.MustCompile(`^vpc-.+`)),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccAWSEksCluster_EncryptionConfig(t *testing.T) {
+	var cluster eks.Cluster
+	kmsKeyResourceName := "aws_kms_key.test"
+	resourceName := "aws_eks_cluster.test"
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t); testAccPreCheckAWSEks(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEksClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEksClusterConfig_EncryptionConfig(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEksClusterExists(resourceName, &cluster),
+					resource.TestCheckResourceAttr(resourceName, "encryption_config.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "encryption_config.0.provider.#", "1"),
+					resource.TestCheckResourceAttrPair(resourceName, "encryption_config.0.provider.0.key_arn", kmsKeyResourceName, "arn"),
+					resource.TestCheckResourceAttr(resourceName, "encryption_config.0.resources.#", "1"),
 				),
 			},
 			{
@@ -123,10 +154,10 @@ func TestAccAWSEksCluster_Version(t *testing.T) {
 		CheckDestroy: testAccCheckAWSEksClusterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAWSEksClusterConfig_Version(rName, "1.13"),
+				Config: testAccAWSEksClusterConfig_Version(rName, "1.16"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEksClusterExists(resourceName, &cluster1),
-					resource.TestCheckResourceAttr(resourceName, "version", "1.13"),
+					resource.TestCheckResourceAttr(resourceName, "version", "1.16"),
 				),
 			},
 			{
@@ -135,11 +166,11 @@ func TestAccAWSEksCluster_Version(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccAWSEksClusterConfig_Version(rName, "1.14"),
+				Config: testAccAWSEksClusterConfig_Version(rName, "1.17"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEksClusterExists(resourceName, &cluster2),
 					testAccCheckAWSEksClusterNotRecreated(&cluster1, &cluster2),
-					resource.TestCheckResourceAttr(resourceName, "version", "1.14"),
+					resource.TestCheckResourceAttr(resourceName, "version", "1.17"),
 				),
 			},
 		},
@@ -162,7 +193,7 @@ func TestAccAWSEksCluster_Logging(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSEksClusterExists(resourceName, &cluster1),
 					resource.TestCheckResourceAttr(resourceName, "enabled_cluster_log_types.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "enabled_cluster_log_types.2902841359", "api"),
+					tfawsresource.TestCheckTypeSetElemAttr(resourceName, "enabled_cluster_log_types.*", "api"),
 				),
 			},
 			{
@@ -176,8 +207,8 @@ func TestAccAWSEksCluster_Logging(t *testing.T) {
 					testAccCheckAWSEksClusterExists(resourceName, &cluster2),
 					testAccCheckAWSEksClusterNotRecreated(&cluster1, &cluster2),
 					resource.TestCheckResourceAttr(resourceName, "enabled_cluster_log_types.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "enabled_cluster_log_types.2902841359", "api"),
-					resource.TestCheckResourceAttr(resourceName, "enabled_cluster_log_types.2451111801", "audit"),
+					tfawsresource.TestCheckTypeSetElemAttr(resourceName, "enabled_cluster_log_types.*", "api"),
+					tfawsresource.TestCheckTypeSetElemAttr(resourceName, "enabled_cluster_log_types.*", "audit"),
 				),
 			},
 			// Disable all log types.
@@ -488,7 +519,14 @@ func testAccPreCheckAWSEks(t *testing.T) {
 
 func testAccAWSEksClusterConfig_Base(rName string) string {
 	return fmt.Sprintf(`
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
 
 resource "aws_iam_role" "test" {
   name = "%s"
@@ -511,11 +549,6 @@ POLICY
 
 resource "aws_iam_role_policy_attachment" "test-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = "${aws_iam_role.test.name}"
-}
-
-resource "aws_iam_role_policy_attachment" "test-AmazonEKSServicePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = "${aws_iam_role.test.name}"
 }
 
@@ -555,7 +588,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName)
 }
@@ -573,7 +606,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName, version)
 }
@@ -591,7 +624,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName, strings.Join(logTypes, "\", \""))
 }
@@ -610,7 +643,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, rName, tagKey1, tagValue1)
 }
@@ -630,9 +663,37 @@ resource "aws_eks_cluster" "test" {
     subnet_ids = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, rName, tagKey1, tagValue1, tagKey2, tagValue2)
+}
+
+func testAccAWSEksClusterConfig_EncryptionConfig(rName string) string {
+	return testAccAWSEksClusterConfig_Base(rName) + fmt.Sprintf(`
+resource "aws_kms_key" "test" {
+  description             = %[1]q
+  deletion_window_in_days = 7
+}
+
+resource "aws_eks_cluster" "test" {
+  name     = %[1]q
+  role_arn = aws_iam_role.test.arn
+
+  encryption_config {
+    resources = ["secrets"]
+
+    provider {
+      key_arn = aws_kms_key.test.arn
+    }
+  }
+
+  vpc_config {
+    subnet_ids = aws_subnet.test[*].id
+  }
+
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
+}
+`, rName)
 }
 
 func testAccAWSEksClusterConfig_VpcConfig_SecurityGroupIds(rName string) string {
@@ -656,7 +717,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids         = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName)
 }
@@ -675,7 +736,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids              = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName, endpointPrivateAccess)
 }
@@ -694,7 +755,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids              = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName, endpointPublicAccess)
 }
@@ -714,7 +775,7 @@ resource "aws_eks_cluster" "test" {
     subnet_ids              = ["${aws_subnet.test.*.id[0]}", "${aws_subnet.test.*.id[1]}"]
   }
 
-  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy", "aws_iam_role_policy_attachment.test-AmazonEKSServicePolicy"]
+  depends_on = ["aws_iam_role_policy_attachment.test-AmazonEKSClusterPolicy"]
 }
 `, testAccAWSEksClusterConfig_Base(rName), rName, publicAccessCidr)
 }

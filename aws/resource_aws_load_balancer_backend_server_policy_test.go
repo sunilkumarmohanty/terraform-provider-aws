@@ -7,9 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSLoadBalancerBackendServerPolicy_basic(t *testing.T) {
@@ -144,6 +144,11 @@ func testAccAWSLoadBalancerBackendServerPolicyConfig_basic0(rName, privateKey, p
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
 }
 
 resource "aws_iam_server_certificate" "test-iam-cert0" {
@@ -206,6 +211,11 @@ func testAccAWSLoadBalancerBackendServerPolicyConfig_basic1(rName, privateKey1, 
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
 }
 
 resource "aws_iam_server_certificate" "test-iam-cert0" {
@@ -279,6 +289,11 @@ func testAccAWSLoadBalancerBackendServerPolicyConfig_basic2(rName, privateKey, c
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
 }
 
 resource "aws_iam_server_certificate" "test-iam-cert0" {

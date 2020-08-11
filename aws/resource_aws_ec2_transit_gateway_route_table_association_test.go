@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccAWSEc2TransitGatewayRouteTableAssociation_basic(t *testing.T) {
@@ -109,7 +109,7 @@ func testAccCheckAWSEc2TransitGatewayRouteTableAssociationDestroy(s *terraform.S
 }
 
 func testAccAWSEc2TransitGatewayRouteTableAssociationConfig() string {
-	return fmt.Sprintf(`
+	return `
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
@@ -144,5 +144,5 @@ resource "aws_ec2_transit_gateway_route_table_association" "test" {
   transit_gateway_attachment_id  = "${aws_ec2_transit_gateway_vpc_attachment.test.id}"
   transit_gateway_route_table_id = "${aws_ec2_transit_gateway_route_table.test.id}"
 }
-`)
+`
 }
